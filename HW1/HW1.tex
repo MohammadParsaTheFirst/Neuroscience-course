@@ -5,6 +5,7 @@
 
 % Fix Unicode character issues
 \DeclareUnicodeCharacter{2212}{-}
+\DeclareMathOperator{\Tr}{Tr}
 
 \lstset{
     language=C,                         % Set language to C
@@ -25,17 +26,17 @@
 
 
 % Author Information
-\newcommand{\SecondAuthor}{Mohammad Hossein Momeni - std id: 99102359}
+
 \newcommand{\FirstAuthor}{Mohammad Parsa Dini - std id: 400101204}
-\newcommand{\exerciseset}{LAB 2 (Report)}
+\newcommand{\exerciseset}{HW 1 (Sol)}
 
 % Page Formatting
 \fancypagestyle{plain}{}
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[RO,LE]{\sffamily\bfseries\large Sharif University of Technology}
-\fancyhead[LO,RE]{\sffamily\bfseries\large EE 25-703: Digital Signal Processing}
-\fancyfoot[LO,RE]{\sffamily\bfseries\large LAB 2 Report}
+\fancyhead[LO,RE]{\sffamily\bfseries\large EE 25-645: Neuroscience }%of Learning, Memory, Cognition}
+\fancyfoot[LO,RE]{\sffamily\bfseries\large HW 1 Solution}
 \fancyfoot[RO,LE]{\sffamily\bfseries\thepage}
 \renewcommand{\headrulewidth}{1pt}
 \renewcommand{\footrulewidth}{1pt}
@@ -49,96 +50,164 @@
 %-------------------------------- Title ----------------------------------
 \title{
     \includegraphics[width=3cm]{logo.png} \\ % Adjust width as needed
-    Digital Signal Processing LAB\par \exerciseset
+    Neuroscience of Learning, Memory, Cognition \par \exerciseset
 }
-\author{\FirstAuthor \\ \SecondAuthor}
+\author{\FirstAuthor }
 \date{}
 
 %--------------------------------- Document ----------------------------------
 \begin{document}
 \maketitle
 
-\section*{Introduction}
-In this lab, we implemented an interrupt-based system for real-time audio signal processing. The DSP processor was configured to read an audio signal from the microphone, amplify it using a predefined gain factor, and then send the processed signal to the headphones. This process was handled using software interrupts, ensuring efficient and timely processing of incoming audio data.
+\section*{1. Fixed Point Stability}
+\subsection*{1.1 Taylor expansion}
+We are given the system of differential equations: $\dot{x} = f(x,y)$ \& $\dot{y} = g(x,y)$. Furthermore, at $(x_0, y_0): f(x_0,y_0) = g(x_0,y_0) =0$. By writing the Taylor expansion we get(let us denote $\frac{\partial f}{\partial x} = f_x$) :
+\begin{equation*}
+    f(x,y) = f(x_0,y_0) + f_x |_{(x_0, y_0)} (x - x_0) + f_y |_{(x_0, y_0)} (y - y_0) + o((x-x_0)^2 + o(y-y_0)^2)
+\end{equation*}
+Now since $f(x_0, y_0) = 0$ & if we forget the higher order terms, we would get(likewise, we can get the same thing for $g$:):
+\begin{align*}
+    f(x,y) &\approx \frac{\partial f}{\partial x}\bigg|_{(x_0, y_0)} (x - x_0) + \frac{\partial f}{\partial y}\bigg|_{(x_0, y_0)} (y - y_0) \\
+    g(x,y) &\approx \frac{\partial g}{\partial x}\bigg|_{(x_0, y_0)} (x - x_0) + \frac{\partial g}{\partial y}\bigg|_{(x_0, y_0)} (y - y_0)
+\end{align*}
+Now by change of variables $u=x-x_0 \rightarrow \dot{x}=\dot{u}$ \& $w=y-y_0 \rightarrow \dot{y}=\dot{w}$
+& rewriting the equations we will imply:
+\begin{align*}
+    \dot{u} = f_x u + f_y w \\
+    \dot{w} = g_x u = g_y w
+\end{align*}
+and in matrix form:
+\begin{equation*}
+\frac{d}{dt} 
+\begin{bmatrix} u \\ w \end{bmatrix} = 
+\begin{bmatrix}
+f_x(x_0, y_0) & f_y(x_0, y_0) \\
+g_x(x_0, y_0) & g_y(x_0, y_0)
+\end{bmatrix}
+\begin{bmatrix} u \\ w \end{bmatrix} = L(x_0, y_0) \begin{bmatrix} u \\ w \end{bmatrix}
+\end{equation*}
+where $L(x_0, y_0) = \begin{bmatrix}
+f_x(x_0, y_0) & f_y(x_0, y_0) \\
+g_x(x_0, y_0) & g_y(x_0, y_0)
+\end{bmatrix}$ is the Jacobian Matrix.
+% --------------------------------------------------
+\subsection*{1.2 Eigenvalue and reversal of vector}
+We will show that the solution for the differential equation $\vec{\dot{x}}(t)=A\vec{x}$ is $\vec{x}(t) =  e^{At} \vec{x}(0)$ where $x \in \mathcal{R}^2$ \& $A \in \mathcal{R}^{2\times 2}$. 
+Since $\mathcal{V} = \{\vec{v_1}, \vec{v_2}\}$ forms a basis of $\mathcal{R}^2$  (assuming distinct eigenvalues or diagonalizable case), we can write:
+$$
+\vec{x}(t) = c_1(t) \vec{v_1} + c_2(t) \vec{v_2}
+$$
+where $c_1(t)$ \& $c_2(t)$ are scalar functions of time. It would imply that $\vec{\dot{{x}}}(t) = \dot{c_1}(t) \vec{v_1} + \dot{c_2}(t) \vec{v_2}$ and also $A\vec{x}= c_1(t) A\vec{v_1} + c_2(t) A\vec{v_2}$ 
+. Now if $\lambda_1, \lambda_2 $ are the eigenvalues associated with eigenvectors $\vec{v_1}, \vec{v_2}$, respectively; which gives $A\vec{v_i} = \lambda_i \vec{v_1} $ for $i=1,2$. \\
+Now we'd get:
+$$
+\vec{\dot{x}}(t) = \dot{c_1}(t) \vec{v_1} + \dot{c_2}(t) \vec{v_2} = \lambda_1 c_1(t) \vec{v_1} + \lambda_2 c_2(t) \vec{v_2} = A\vec{x}
+$$
+Since $\vec{v_1},\vec{v_2}$ are linearly independent, coefficients must match, which will imply:
+\begin{align*}
+    \dot{c_1}(t) = \lambda_1c_1(t) \rightarrow c_1(t) = c_1(0) e^{\lambda_1t}\\
+    \dot{c_2}(t) = \lambda_2c_2(t) \rightarrow c_2(t) = c_2(0) e^{\lambda_2t}
+\end{align*}
+writing these together will imply(let 
+$
+\Lambda = \begin{bmatrix}
+            \lambda_1 & 0 \\
+            0 & \lambda_2
+            \end{bmatrix}
+$):
+\begin{align*}
+    \vec{x}(t) 
+    &= c_1(t)\vec{v_1} + c_2(t)\vec{v_2} \\
+    &= c_1(0)e^{\lambda_1 t}\vec{v_1} + c_2(0)e^{\lambda_2 t}\vec{v_2} \\
+    &= \mathcal{V}
+        \begin{bmatrix}
+            e^{\lambda_1 t} & 0 \\
+            0 & e^{\lambda_2 t}
+        \end{bmatrix}
+        %\mathcal{V}^{-1}
+        \begin{bmatrix}
+            c_1(0) \\
+            c_2(0)
+        \end{bmatrix} = \mathcal{V} e^{\lambda t} \vec{x}(0)
+\end{align*}
+which clearly shows that the solution is linear combination of $\vec{v_1}, \vec{v_2}$.
+% --------------------------------------------------
+\subsection*{1.3 Characteristic equation}
+If we let $\textbf{u}= \begin{bmatrix} u \\ w \end{bmatrix}$, in the section 1.1 we got:
+$$
+\frac{d}{dt} 
+\begin{bmatrix} u \\ w \end{bmatrix} = L(x_0, y_0) \begin{bmatrix} u \\ w \end{bmatrix}
+\rightarrow \vec{\dot{\textbf{u}}} = L \textbf{u}
+$$.
+Now let
+$
+L = \begin{bmatrix}
+f_x(x_0, y_0) & f_y(x_0, y_0) \\
+g_x(x_0, y_0) & g_y(x_0, y_0)
+\end{bmatrix}
+= \begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+$.
+\\
+We know that the sum of eigenvalues is $\tau = a+d = \Tr\{L\}=\lambda_1 + \lambda_2$ and their product is $\lambda_1 \lambda_2 = \det{L} = ad -bc = \Delta$. So solving this system of equation:
+\begin{align*}
+    \lambda_1 + \lambda_2 = \tau \\
+    \lambda_1 \lambda_2 = \Delta 
+\end{align*}.
+Clearly the eigenvectors are the roots of this equation $\lambda^2 - \tau \lambda + \Delta = 0$
+which gives $\lambda_{1,2} = \frac{\tau \pm \sqrt{\tau^2 - 4\Delta}}{2}$
 
 
-% In this session of the lab we implemented a code to 
 
-% In this code, we used a header named \texttt{IO.h} to which is responsible for initializing the DSP Board, configuring the audio codec
-% \\
-% Processors can not simply do nothing; they must execute some instructions even if it's waiting for the next 
-% \\
+We use the standard stability diagram in $(\tau,\Delta)$ space.
 
-\section*{Necessity of Interrupts in Signal Processing}
-In real-time digital signal processing, using interrupts is essential because processors cannot simply remain idle while waiting for new data. Instead of constantly checking for new input, interrupts allow the system to efficiently handle data as soon as it arrives. This prevents unnecessary CPU usage and ensures timely execution of critical tasks.
+\begin{description}
+    \item[Case 1:] $\tau^2 - 4\Delta > 0,\ \tau < 0,\ \Delta > 0$ \\
+    Discriminant $>0 \implies$ real distinct eigenvalues. \\
+    $\tau < 0 \implies$ sum of eigenvalues $<0 \implies$ both negative (since $\Delta > 0 \implies$ product positive). \\
+    $\Rightarrow$ \textbf{Stable node}. \\
+    In Figure~1: bottom-right region of the stable zone (right half of the parabolic boundary in lower half-plane).
 
-\begin{figure}[h!]
-    \centering
-    \includegraphics[scale=0.3]{Screenshot 2025-03-06 191756.png} % Resizing the image to half its size
-    \caption{}
-    \label{fig:gr3}
-\end{figure}
+    \item[Case 2:] $\tau^2 - 4\Delta > 0,\ \tau > 0,\ \Delta > 0$ \\
+    Real distinct eigenvalues. \\
+    $\tau > 0 \implies$ both eigenvalues positive. \\
+    $\Rightarrow$ \textbf{Unstable node}. \\
+    In Figure~1: top-right region of the unstable zone (right half of the parabolic boundary in upper half-plane).
 
+    \item[Case 3:] $\tau^2 - 4\Delta < 0,\ \tau < 0,\ \Delta > 0$ \\
+    Discriminant $<0 \implies$ complex eigenvalues. \\
+    $\tau < 0 \implies$ real part negative. \\
+    $\Rightarrow$ \textbf{Stable spiral}. \\
+    In Figure~1: region inside the parabola, below the $\tau$-axis (lower-left quadrant inside parabola).
 
-\section*{Interrupt Configuration Function}
-we also used a function named \texttt{hook\_int} which:
-\begin{enumerate}
-    \item \textbf{disables global interrupts }to prevent interference during configuration,
-    \item \textbf{Enables Non-Maskable Interrupts} \texttt{NMI} which are high-priority interrupts,
-    \item \textbf{Maps the serial port receive interrupt} to interrupt line 15.
-    \item \textbf{Enables the \texttt{RINT2} interrupt}, which is triggered when new audio data arrives.
-    \item \textbf{Re-enables global interrupts} to allow normal operation.
-\end{enumerate}
+    \item[Case 4:] $\tau^2 - 4\Delta < 0,\ \tau > 0,\ \Delta > 0$ \\
+    Complex eigenvalues. \\
+    $\tau > 0 \implies$ real part positive. \\
+    $\Rightarrow$ \textbf{Unstable spiral}. \\
+    In Figure~1: region inside the parabola, above the $\tau$-axis (upper-right quadrant inside parabola).
 
-\begin{lstlisting}
-    void hook_int(){
-        IRQ_globalDisable();    // Disable global interrupts
-        IRQ_nmiEnable();        // Enable Non-Maskable Interrupts (NMI)
-        IRQ_map(IRQ_EVT_RINT2, 15); // Map RINT2 (Receive Interrupt 2) to interrupt line 15
-        IRQ_enable(IRQ_EVT_RINT2);  // Enable the receive interrupt (RINT2)
-        IRQ_globalEnable();    // Re-enable global interrupts
-    }
+    \item[Case 5:] $\Delta < 0$ \\
+    Product of eigenvalues $<0 \implies$ real eigenvalues of opposite signs. \\
+    $\Rightarrow$ \textbf{Saddle point}. \\
+    In Figure~1: entire region below the $\tau$-axis ($\Delta < 0$).
+\end{description}
 
-\end{lstlisting}
+\subsubsection*{Summary Mapping to Figure 1 (typical stability diagram):}
+\[
+\begin{aligned}
+\text{Case 1} &\;\to\; \text{Stable node (right-hand branch, $\tau<0$, $\Delta>0$)} \\
+\text{Case 2} &\;\to\; \text{Unstable node (right-hand branch, $\tau>0$, $\Delta>0$)} \\
+\text{Case 3} &\;\to\; \text{Stable spiral (inside parabola, $\tau<0$)} \\
+\text{Case 4} &\;\to\; \text{Unstable spiral (inside parabola, $\tau>0$)} \\
+\text{Case 5} &\;\to\; \text{Saddle ($\Delta<0$ region, below horizontal axis)}
+\end{aligned}
+\]
 
-\section*{Interrupt Service Routine}
-
-The \texttt{serialPortRcvISR()} function is an interrupt service routine that processes incoming audio data. It reads a sample from the codec, amplifies it by multiplying with \texttt{volumeGain}, and writes the modified sample back to the codec. This ensures real-time signal processing with minimal CPU usage.
-
-\begin{lstlisting}
-interrupt void serialPortRcvISR() {
-    Uint32 temp;
-    DSK6416_AIC23_read(hCodec, &temp);  // Read an audio sample from the codec
-    temp = (temp * volumeGain);         // Apply volume gain (amplify the sample)
-    //temp = temp & 0xFF00;  // (Commented out) Optional bit-masking
-    DSK6416_AIC23_write(hCodec, temp);  // Write the processed sample back to the codec
-}
-\end{lstlisting}
-
-
-\section*{Implementation}
-
-We configured the DSP board and set the input source to the microphone. Using the \texttt{hook\_int()} function, we disabled global interrupts, enabled non-maskable interrupts for critical signals, mapped the serial port receive interrupt to line 15, and activated it for new audio data arrivals. The \texttt{serialPortRcvISR()} function managed the interrupt service routine by reading incoming audio samples from the codec, amplifying them with a gain factor, and sending the amplified signal to the output. The continuous \texttt{while(1)} loop kept the processor active and efficiently handled incoming data using interrupts.
-
-\begin{lstlisting}
-int main(){
-    MBZIO_init(DSK6416_AIC23_FREQ_8KHZ); // Initialize DSP system at 8 kHz sample rate
-    MBZIO_set_inputsource_microphone();  // Set input source to microphone
-
-    //volumeGain = 3; // (Commented out) Set the volume gain factor
-
-    hook_int();  // Configure and enable interrupts
-
-    while(1){ }  // Infinite loop (processor waits for interrupts)
-}
-
-\end{lstlisting}
-We also used this line of code since our microphone is not stereo but the handsfrees are stereo, so we masked half of the 32 bits in order to determine which of the MSB and LSB corresponds to which handsfree. We found that the MSB corresponds to the left handsfree. We also set a Gel file gain in order to adjust the volume.  
-\begin{lstlisting}
-    temp = ( temp * volumeGain ) & 0xFF00; 
-\end{lstlisting}
-
+\[
+\text{Stable node, Unstable node, Stable spiral, Unstable spiral, Saddle}
+\]
 
 % --------------------------------------------------
-
 \end{document}
