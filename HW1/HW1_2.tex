@@ -1,0 +1,277 @@
+\documentclass{article}
+\usepackage{graphicx, subfig, fancyhdr, amsmath, amssymb, amsthm, url, hyperref, geometry, listings, xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+
+% Fix Unicode character issues
+\DeclareUnicodeCharacter{2212}{-}
+\DeclareMathOperator{\Tr}{Tr}
+
+\lstset{
+    language=Matlab,
+    basicstyle=\ttfamily\small,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    breaklines=true,
+    breakatwhitespace=true,
+    showstringspaces=false,
+    tabsize=4
+}
+
+% Author Information
+\newcommand{\FirstAuthor}{Mohammad Parsa Dini -- Student ID: 400101204}
+\newcommand{\exerciseset}{HW 1 (Solution)}
+
+% Page Formatting
+\fancypagestyle{plain}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[RO,LE]{\sffamily\bfseries\large Sharif University of Technology}
+\fancyhead[LO,RE]{\sffamily\bfseries\large EE 25-645: Neuroscience}
+\fancyfoot[LO,RE]{\sffamily\bfseries\large HW 1 Solution}
+\fancyfoot[RO,LE]{\sffamily\bfseries\thepage}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+
+% Custom Commands
+\newcommand{\circledtimes}{\mathbin{\text{\large$\bigcirc$}\kern-0.9em\times}}
+
+% Image Path
+\graphicspath{{figures/}}
+
+%-------------------------------- Title ----------------------------------
+\title{ 
+\includegraphics[width=3cm]{logo.png} \\ 
+% Adjust width as needed 
+Neuroscience of Learning, Memory, Cognition \par \exerciseset } 
+\author{\FirstAuthor }
+\date{}
+%--------------------------------- Document ----------------------------------
+\begin{document}
+\maketitle
+
+% --------------------------------------------------
+\section*{2. Simple Dynamic Model}
+
+Dr.~Eugene Izhikevich proposed the following spiking neuron model:
+
+\begin{align}
+\frac{dV}{dt} &= -\alpha V + \beta V^{2} + \gamma - u + I(t), \\
+\frac{du}{dt} &= a(-u + bV),
+\end{align}
+
+where $V$ is the membrane potential and $u$ is a recovery variable representing combined ionic currents.
+
+The model includes the following threshold and reset condition:
+
+
+\[
+\text{if } V \geq 30 \,\text{mV} \quad \Rightarrow \quad 
+\begin{cases}
+V \leftarrow c, \\
+u \leftarrow u + d,
+\end{cases}
+\]
+
+
+meaning that when the membrane potential reaches $30$ mV, the potential is reset to $c$ and the recovery variable $u$ is incremented by $d$.
+
+\vspace{1em}
+To simulate the dynamic model numerically, we discretize the system. At each timestep we update the variables by adding the derivative multiplied by the timestep size:
+
+
+\[
+x(t+\Delta t) = x(t) + \frac{dx(t)}{dt}\,\Delta t.
+\]
+
+
+
+Here is the MATLAB code for simulating this model:
+
+\begin{lstlisting}
+% --------------- Izhikevich Neuron Model -----------------
+% Simulation settings
+dt = 0.1;       % time step (ms)
+T  = 1000;      % total time (ms)
+steps = T/dt;
+
+% Initialize variables
+V = -65;        % membrane potential
+u = b*V;        % recovery variable
+Vs = zeros(1,steps);
+us = zeros(1,steps);
+ts = (0:steps-1)*dt;
+
+% Dynamics functions
+dVdt = @(V,u) -alpha*V + beta*V.^2 + gamma - u + I;
+dudt = @(V,u) a*(-u + b*V);
+
+% Simulation loop
+for i = 1:steps
+    V = V + dt*dVdt(V,u);
+    u = u + dt*dudt(V,u);
+    % Threshold condition
+    if V >= 30
+        V = c;
+        u = u + d;
+    end
+    Vs(i) = V;
+    us(i) = u;
+end
+\end{lstlisting}
+
+\subsection*{2.1 Regular Spiking}
+
+With parameters $a=0.02,\; b=0.2,\; c=-65,\; d=8,\; I=10$ and assuming $t \to \infty$ (steady state), we set:
+
+
+\[
+\frac{du}{dt} = \frac{dV}{dt} = 0.
+\]
+
+
+
+From $\frac{du}{dt}=0$:
+
+
+\[
+-u + bV = 0 \quad \Rightarrow \quad u = bV = 0.2V.
+\]
+
+
+
+Substituting into $\frac{dV}{dt}=0$:
+
+
+\[
+-(-5)V + 0.04V^2 + 150 - u + 10 = 0,
+\]
+
+
+
+
+\[
+0.04V^2 + 4.8V + 160 = 0.
+\]
+
+
+
+The discriminant is negative:
+
+
+\[
+\Delta = (4.8)^2 - 4(0.04)(160) = -2.56 < 0,
+\]
+
+
+so the equilibrium points are complex and no real fixed point exists. This explains why the neuron exhibits repetitive spiking under constant input.
+
+
+Here is the result of simulation, showing the recovery variable $u(t)$:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.5]{au.png}
+    \caption{Recovery variable $u(t)$ over time.}
+    \label{fig:u}
+\end{figure}
+
+Here is the result of simulation, showing the membrane potential $V(t)$:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.5]{av.png}
+    \caption{Membrane potential $V(t)$ over time.}
+    \label{fig:V}
+\end{figure}
+%-----------------------------------------------------
+
+\subsection*{2.2 Fast spiking}
+
+With parameters $a=0.1,\; b=0.2,\; c=-65,\; d=2,\; I=10$ and assuming $t \to \infty$ (steady state), we set: 
+
+\[
+\frac{du}{dt} = \frac{dV}{dt} = 0.
+\]
+
+From $\displaystyle\frac{du}{dt} = 0$:
+
+$$u = bV = 0.2V$$
+
+Substitute into $\displaystyle\frac{dV}{dt} = 0$:
+
+$$0.04V^2 + 5V + 150 - 0.2V + 10 = 0$$
+
+$$\Rightarrow 0.04V^2 + 4.8V + 160 = 0$$
+
+Discriminant:
+
+$$\Delta = (4.8)^2 - 4(0.04)(160) = 23.04 - 25.6 = -2.56 < 0$$
+
+\textbf{Conclusion:} No real fixed point exists. The system is driven into oscillatory spiking once the threshold/reset is included. This matches the Fast Spiking behavior.\\
+
+
+Here is the result of simulation, showing the recovery variable $u(t)$:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.3]{bu.png}
+    \caption{Recovery variable $u(t)$ over time.}
+    \label{fig:u}
+\end{figure}
+
+Here is the result of simulation, showing the membrane potential $V(t)$:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.3]{bv.png}
+    \caption{Membrane potential $V(t)$ over time.}
+    \label{fig:V}
+\end{figure}
+
+% --------------------------------------------------
+
+\subsection*{2.3 Chattering}
+We set steady-state conditions:
+
+$$\frac{dV}{dt} = -\alpha V + \beta V^2 + \gamma - u + I = 0, \quad \frac{du}{dt} = a(-u + bV) = 0$$
+
+Parameters: $\alpha = -5,\; \beta = 0.04,\; \gamma = 150,\; a = 0.02,\; b = 0.2,\; I = 10$.
+
+From $\displaystyle\frac{du}{dt} = 0$:
+
+$$u = bV = 0.2V$$
+
+Substitute into $\displaystyle\frac{dV}{dt} = 0$:
+
+$$0.04V^2 + 5V + 150 - 0.2V + 10 = 0$$
+
+$$\Rightarrow 0.04V^2 + 4.8V + 160 = 0$$
+
+Discriminant:
+
+$$\Delta = (4.8)^2 - 4(0.04)(160) = 23.04 - 25.6 = -2.56 < 0$$
+
+\textbf{Conclusion:} No real fixed point exists. With the reset condition, the neuron produces bursts of spikes (chattering), rather than tonic firing.
+\\
+\nextpage
+
+Here is the result of simulation, showing the recovery variable $u(t)$:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.3]{cu.png}
+    \caption{Recovery variable $u(t)$ over time.}
+    \label{fig:u}
+\end{figure}
+
+Here is the result of simulation, showing the membrane potential $V(t)$:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.3]{cv.png}
+    \caption{Membrane potential $V(t)$ over time.}
+    \label{fig:V}
+\end{figure}
+
+\end{document}
