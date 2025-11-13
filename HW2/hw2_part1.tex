@@ -1,0 +1,133 @@
+\documentclass{article}
+\usepackage{graphicx, subfig, fancyhdr, amsmath, amssymb, amsthm, url, hyperref, geometry, listings, xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{relsize}
+
+% Fix Unicode character issues
+\DeclareUnicodeCharacter{2212}{-}
+\DeclareMathOperator{\Tr}{Tr}
+
+\lstset{
+    language=Matlab,
+    basicstyle=\ttfamily\small,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    breaklines=true,
+    breakatwhitespace=true,
+    showstringspaces=false,
+    tabsize=4
+}
+
+% Author Information
+\newcommand{\FirstAuthor}{Mohammad Parsa Dini -- Student ID: 400101204}
+\newcommand{\exerciseset}{HW 2 (Solution) Part I}
+
+% Page Formatting
+\fancypagestyle{plain}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[RO,LE]{\sffamily\bfseries\large Sharif University of Technology}
+\fancyhead[LO,RE]{\sffamily\bfseries\large EE 25-645: Neuroscience}
+\fancyfoot[LO,RE]{\sffamily\bfseries\large HW 2 Solution}
+\fancyfoot[RO,LE]{\sffamily\bfseries\thepage}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+
+% Custom Commands
+\newcommand{\circledtimes}{\mathbin{\text{\large$\bigcirc$}\kern-0.9em\times}}
+
+% Image Path
+\graphicspath{{figures/}}
+
+%-------------------------------- Title ----------------------------------
+\title{ 
+\includegraphics[width=3cm]{logo.png} \\ 
+% Adjust width as needed 
+Neuroscience of Learning, Memory, Cognition \par \exerciseset } 
+\author{\FirstAuthor }
+\date{}
+%--------------------------------- Document ----------------------------------
+\begin{document}
+\maketitle
+
+% ---------------------------------------------------------------------------------------------%
+\section*{1. Linear Filter Model of a Synapse }
+
+We assume that $\rho_b (t) = \sum_i \delta(t-t_i)$ is the spike-train signal,  $K(t) = e^{-\tau/\tau_s}$ is the exponential decay signals and $P_s(t) = \sum_{t>t_i} K(t-t_i)$ is the probability of that postsynaptic ion channels are open at time $t$. 
+
+\subsection*{1.1 Background and Introduction}
+Given the spike train times $\mathcal{T}=\{1 ms, 3 ms, 7 ms, 9 ms, 18 ms\}$, we can model as the firing-rate as \begin{equation*}
+    \rho_b(t) = \sum_{\tau \in \mathcal{T}} \delta(t-\tau) = \delta(t-0.001) + \delta(t-0.003) + \delta(t-0.007) + \delta(t-0.009) + \delta(t-0.018) 
+\end{equation*}
+
+Now, given $\tau_s = 5ms$, we can compute $P_S(10^{-2})$ as:
+\begin{equation*}
+    P_s(10ms) = K(1ms)+ K(3ms) + K(7ms) + K(9ms) = 
+    e^{-\frac{1}{5}} + e^{-\frac{3}{5}} + e^{-\frac{5}{5}} + e^{-\frac{9}{5}} \approx 1.7794
+\end{equation*}
+
+We can easily see that \textbf{higher $\tau_s$} means slower decay of postsynaptic response and therefore, longer-lasting influence of each spike, temporal summation is more significant. However,\textbf{ lower $\tau_s$} means faster decay and thus each spike’s effect is brief, less summation.
+% --------------------------------------------      --------------------------------------------%
+\subsection*{1.2 Shifting property and convolution interpretation}
+Assuming that the spiking train $\rho_b(t) = \delta(t-1) + \delta(t-2) + \delta(t-3)$ passes through the kernel $h(t)=e^{-t} u(t)$ , the filtered output will be:
+\begin{equation*}
+    y(t) = h(t) * \rho_b(t) = h(t-1) + h(t-2) + h(t-3) = e^{-t+1} u(t-1) + e^{-t+2} u(t-2) + e^{-t+3} u(t-3) 
+\end{equation*}
+% --------------------------------------------      --------------------------------------------%
+\subsection*{1.3 Calculating the system’s response to a spike train}
+We have the total synaptic input current as $I_s(t) = \sum_{b=1}^n w_b \int_{-\infty}^{t} K(t-\tau) \rho_b(t)$, since  $\rho_b(t) = \sum_{i} \delta(t-t_i^{(b)})$ 
+, we obtain that: 
+\begin{equation*}
+    I_s(t) = \mathlarger{\sum}_{b=1}^n w_b \mathlarger{\sum}_{t_i^{(b)}<t} K(t - t_i^{(b)}) 
+\end{equation*}
+where $K(t) = e^{-t/\taus}$ and $\taus=5ms$. We have two synapses synapse1 and synapse2 who spike at times $\mathcal{T}_1 = \{1ms, 6ms \}$ and $\mathcal{T}_2 = \{2ms, 8ms , 11ms\}$ with synaptic weights $w_1= 1$ and $w_2=0.5$, respectively.\\
+Now we will compute total input current at $t=15ms$. Let $I_1, I_2$ be the Synapse 1 and 2 contributions at $t=15ms$: 
+\begin{align*}
+    I_1 &= w_1 (K(14\text{ms}) + K(9\text{ms})) = 1 \times (e^{-1.8} + e^{-2.8}) = 0.2261095 \\
+    I_2 &= w_2 (K(13\text{ms}) + K(7\text{ms}) + K(4\text{ms})) = 0.2 \times (e^{-2.6} + e^{-1.4} + e^{-0.8}) = 0.3850998 \\
+    I_s &= I_1 + I_2 = 0.2261095 + 0.3850998 = 0.6112093 \approx 0.611
+\end{align*}
+
+Here is the code of the simulation of the spikes:
+\begin{lstlisting}
+% --------------- Simulation of Spikes -----------------
+tau_s = 5.0;
+t_vals = linspace(0, 25, 1000);
+
+spikes1 = [1, 6];
+spikes2 = [2, 8, 11];
+
+% Define the P_b function
+function result = P_b(t, spikes, tau_s)
+    result = zeros(size(t));
+    for i = 1:length(spikes)
+        spike_time = spikes(i);
+        result = result + (t > spike_time) .* exp(-(t - spike_time) / tau_s);
+    end
+end
+
+% Calculate postsynaptic responses
+P1 = P_b(t_vals, spikes1, tau_s);
+P2 = P_b(t_vals, spikes2, tau_s);
+Is = P1 + 0.5 * P2;
+\end{lstlisting}
+
+In the next page, you can see the result of the simulation where we can clearly see that after each neuron spikes, the $I_s(t)$ jumps a little bit with respect to the weights and then it would continue its decay. Here the graphs of the current $I_s(t)$ and post-synaptic responses are depicted:
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.33]{img1.png}
+    \caption{total synaptic input current $I_s(t)$ over time.}
+    \label{fig:V}
+\end{figure}
+
+
+
+\end{document}
